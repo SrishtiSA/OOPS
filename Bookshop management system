@@ -1,0 +1,136 @@
+#include<iostream>
+#include<string.h>
+#include <pqxx/pqxx> 
+
+using namespace std;
+using namespace pqxx;
+
+
+int main(int, char* argv[])
+{
+       char * sql;
+   try {
+      pqxx::connection C("dbname = shop user = postgres password = postgres \
+      hostaddr = 127.0.0.1 port = 5432");      
+      //pqxx::work W(C);
+      if (C.is_open()) {
+         cout << "Opened database successfully: " << C.dbname() << endl;
+      } else {
+         cout << "Can't open database" << endl;
+         return 1;
+      }
+      /* Create SQL statement */
+      /*sql = "CREATE TABLE BOOK("  \
+      "ID INT PRIMARY KEY     NOT NULL," \
+      "NAME           TEXT    NOT NULL," \
+      "AUTHOR_NAME           TEXT     NOT NULL," \
+      "NUMBER_OF_COPIES       INT," \
+      "CATEGORY        TEXT," \ 
+      "LANGUAGE       TEXT);";
+       W.exec( sql );
+      W.commit();*/
+      cout << "Table created successfully" << endl;
+    int ch;
+    while(1)
+    {
+        cout<<"Enter the choice"<<endl;
+        cout<<"1.For adding a book"<<endl;
+        cout<<"2.For updating the records"<<endl;
+        cout<<"3.For deleting record of any book using it's id"<<endl;
+        cout<<"4.For showing the details of the books"<<endl;
+        cout<<"5.Exit"<<endl<<endl;
+        cin>>ch;
+
+        switch(ch)
+        {
+            case 1:{pqxx::work W(C);
+                    int b_number;
+                    std::string name="name";
+                    std::string author_name="author_name";
+                    int cnt;
+                    std::string category="category";
+                    std::string lang="lang";
+                    cout<<"Enter the details of the book: "<<endl;
+                    cout<<"Book number: ";
+                    cin>>b_number;
+                    cout<<"Name of the book: ";
+                    cin>>name;
+                    cout<<"Author name: ";
+                    cin>>author_name;
+                    cout<<"Number of copies of book: ";
+                    cin>>cnt;
+                    cout<<"Category of the book: ";
+                    cin>>category;
+                    cout<<"Language of the book: ";
+                    cin>>lang;
+                    cout<<endl;
+                    C.prepare("example","INSERT INTO BOOK (ID,NAME,AUTHOR_NAME,NUMBER_OF_COPIES,CATEGORY,LANGUAGE) VALUES($1,$2,$3,$4,$5,$6)");
+                    pqxx::result r=W.prepared("example")(b_number)(name)(author_name)(cnt)(category)(lang).exec();
+                    W.commit();
+                    cout << "Records created successfully" << endl;
+                    break;
+                   }
+            case 2:{pqxx::work W(C);
+                   int i;
+                   int copies;
+                   cout<<"Enter Book ID whose number of copies is to edited: ";
+                   cin>>i;
+                   cout<<"Enter updated value for number of books: ";
+                   cin>>copies;
+                   C.prepare("example","UPDATE BOOK set  NUMBER_OF_COPIES= $2 where ID = $1");
+                   pqxx::result r=W.prepared("example")(i)(copies).exec();
+                   W.commit();
+                   cout << "Records updated successfully" << endl;
+                   sql = "SELECT * from BOOK";
+                   nontransaction N(C);
+                   result R( N.exec( sql ));
+                   cout << "Updated successfully" << endl;
+                   break;
+                   }
+            case 3:{pqxx::work W(C); 
+                   int i;
+                   cout<<"Enter Book ID whose record is to be deleted: ";
+                   cin>>i;
+                   C.prepare("example","DELETE from BOOK where ID = $1");
+                   pqxx::result r=W.prepared("example")(i).exec();
+                   W.commit();
+                   cout << "Records deleted successfully" << endl;
+                   sql = "SELECT * from BOOK";
+                   nontransaction N(C);
+                   result R( N.exec( sql ));
+                   break;
+                   }
+            case 4:{pqxx::work W(C);
+                    std::string name="name";
+                    cout<<"Enter the name of the book"<<endl;
+                    cin>>name;
+                    C.prepare("SELECT * FROM BOOK WHERE name LIKE " + tx.quote(tx.esc_like($1) + ".___"));
+                   pqxx::result r=W.prepared("example")(name).exec();
+                   for (result::const_iterator C = r.begin(); C != r.end(); ++C) 
+                    {
+                       cout << "Details of book are: "<<endl;
+                       cout << "            BOOK ID = " << C[0].as<int>() << endl;
+                       cout << "            Book Name = " << C[1].as<std::string>() << endl;
+                       cout << "            Author Name = " << C[2].as<std::string>() << endl;
+                       cout << "            Number of Copies= " << C[3].as<int>() << endl;
+                                 cout << "            Catrgory = " << C[4].as<std::string>() << endl;
+                       cout << "            LANGUAGE = "<<C[5].as<std::string>() <<endl;
+                       cout << "---------------------------------------------------------------------------------"<<endl;
+                     }
+                     W.commit();
+                     break;
+                     }
+      case 5:exit(0);
+                   break;
+           default:cout<<"Invalid choice"<<endl;
+        }
+    }
+    C.disconnect ();
+   }    catch (const std::exception &e) {
+      cerr << e.what() << std::endl;
+      return 1;
+   }
+   
+    return 0;
+}
+
